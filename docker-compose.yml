@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./laravel-app
+      dockerfile: Dockerfile
+    container_name: mhq-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./laravel-app:/var/www/html
+    networks:
+      - mhq-network
+    depends_on:
+      - mysql
+      - phpmyadmin
+
+  mysql:
+    image: mysql:8.0
+    container_name: mhq-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: mhq_db
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_PASSWORD: root123
+      MYSQL_USER: mhq_user
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - mhq-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: mhq-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root123
+    ports:
+      - "8080:80"
+    networks:
+      - mhq-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: mhq-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./laravel-app:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - mhq-network
+    depends_on:
+      - app
+
+volumes:
+  mysql_data:
+
+networks:
+  mhq-network:
+    driver: bridge
