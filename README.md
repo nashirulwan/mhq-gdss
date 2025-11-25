@@ -15,6 +15,7 @@ This system provides objective scoring and ranking for MHQ competitions through 
 - ✅ **Complete CRUD** - Participants, Judges, Assessments
 - ✅ **Responsive UI** - Bootstrap 5 mobile-friendly interface
 - ✅ **Real-time Validation** - Input validation and AJAX interactions
+- ✅ **User Authentication** - Secure login/logout with session management
 
 ## 🚀 Quick Start
 
@@ -49,15 +50,26 @@ php artisan key:generate
 php artisan migrate:fresh --seed
 ```
 
-5. **Start Server**
+5. **Build Frontend Assets**
+```bash
+npm install
+npm run build
+```
+
+6. **Start Server**
 ```bash
 php artisan serve
 ```
 
-6. **Access Application**
+7. **Access Application**
 ```
 http://localhost:8000
 ```
+
+8. **Login with Demo Accounts**
+- **Admin**: `admin@tahfidz.com` / `password123`
+- **Juri**: `juri@tahfidz.com` / `password123`
+- **Peserta**: `peserta@tahfidz.com` / `password123`
 
 ## 📋 Database Structure
 
@@ -205,6 +217,18 @@ php artisan tinker
 - **Project TODO**: See `PROJECT_TODO.md` for development tasks
 - **Laravel Docs**: https://laravel.com/docs
 - **Bootstrap Docs**: https://getbootstrap.com/docs
+
+## 📋 Changelog
+
+For detailed information about changes, updates, and new features, please see the [CHANGELOG.md](CHANGELOG.md).
+
+### Recent Updates (v1.0.1)
+- ✅ **User Authentication System** - Secure login/logout functionality
+- ✅ **Session Management** - User state preservation and security
+- ✅ **Route Protection** - Authentication-based access control
+- ✅ **Demo User Accounts** - Pre-configured accounts for testing
+- ✅ **Enhanced UI** - User profiles and logout functionality
+- ✅ **Database Integration** - MySQL with demo data seeding
 
 ## 📞 Support
 
