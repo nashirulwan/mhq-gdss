@@ -92,7 +92,44 @@
                         </a>
                     </li>
                 </ul>
-                <span class="navbar-text">
+
+                <!-- User Info & Logout -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ session('user.name') ?? 'User' }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><h6 class="dropdown-header">
+                                <i class="bi bi-person me-1"></i>
+                                {{ session('user.name') ?? 'User' }}
+                            </h6></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><span class="dropdown-item-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-envelope me-1"></i>{{ session('user.email') }}
+                                </small>
+                            </span></li>
+                            <li><span class="dropdown-item-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-shield-check me-1"></i>{{ ucfirst(session('user.role')) ?? 'User' }}
+                                </small>
+                            </span></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ route('logout') }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <span class="navbar-text d-none d-md-inline-block">
                     <small class="text-light">GDSS - SMART & Borda Method</small>
                 </span>
             </div>
@@ -143,6 +180,31 @@
                                     Juri Aktif: {{ App\Models\Juri::where('is_active', true)->count() }}
                                 </small>
                             </span>
+                        </li>
+                    </ul>
+
+                    <hr>
+
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Pengguna</span>
+                    </h6>
+                    <ul class="nav flex-column mb-2">
+                        <li class="nav-item">
+                            <span class="nav-link text-primary">
+                                <small>
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <strong>{{ session('user.name') ?? 'User' }}</strong><br>
+                                    <span class="text-muted">{{ ucfirst(session('user.role')) ?? 'User' }}</span>
+                                </small>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{{ route('logout') }}" method="POST" class="px-3">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">
+                                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                                </button>
+                            </form>
                         </li>
                     </ul>
                 </div>
