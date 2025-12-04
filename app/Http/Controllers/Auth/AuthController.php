@@ -5,36 +5,10 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class AuthController extends Controller
 {
-    // Demo users array (temporary solution)
-    private $demoUsers = [
-        [
-            'id' => 1,
-            'name' => 'Admin SPK',
-            'email' => 'admin@tahfidz.com',
-            'password' => 'password123', // In production, this should be hashed
-            'role' => 'admin'
-        ],
-        [
-            'id' => 2,
-            'name' => 'Ustadz Ahmad',
-            'email' => 'juri@tahfidz.com',
-            'password' => 'password123',
-            'role' => 'juri'
-        ],
-        [
-            'id' => 3,
-            'name' => 'Peserta Test',
-            'email' => 'peserta@tahfidz.com',
-            'password' => 'password123',
-            'role' => 'peserta'
-        ]
-    ];
-
     /**
      * Show the login form.
      *
@@ -42,6 +16,11 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
+        // If user is already logged in, redirect to dashboard
+        if (Auth::check()) {
+            return redirect()->route(Auth::user()->dashboard_route);
+        }
+
         return view('auth.login');
     }
 
@@ -56,20 +35,23 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Password wajib diisi.',
         ]);
 
-        // Check demo users
-        $user = collect($this->demoUsers)->firstWhere('email', $credentials['email']);
+        // Attempt to authenticate user
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
+            $request->session()->regenerate();
 
-        if ($user && $user['password'] === $credentials['password']) {
-            // Store user in session
-            session(['user' => $user]);
+            // Update last login
+            $user = Auth::user();
+            $user->updateLastLogin();
 
-            if ($request->filled('remember')) {
-                session()->put('remember_me', true);
-            }
-
-            return redirect()->intended(route('dashboard'));
+            // Redirect to role-specific dashboard
+            return redirect()->route($user->dashboard_route)
+                ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }
 
         return back()->withErrors([
@@ -85,13 +67,79 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        session()->forget('user');
-        session()->forget('remember_me');
+        Auth::logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect()->route('login')
+            ->with('success', 'Anda telah berhasil logout.');
+    }
+
+    /**
+     * Show user profile.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        return view('auth.profile', compact('user'));
+    }
+
+    /**
+     * Update user profile.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'address' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $user->update($validated);
+
+        return back()->with('success', 'Profil berhasil diperbarui.');
+    }
+
+    /**
+     * Update user password.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function updatePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => 'Password saat ini wajib diisi.',
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        $user = Auth::user();
+
+        // Check current password
+        if (!Auth::attempt(['email' => $user->email, 'password' => $validated['current_password']])) {
+            return back()->withErrors(['current_password' => 'Password saat ini salah.']);
+        }
+
+        // Update password
+        $user->update([
+            'password' => $validated['password']
+        ]);
+
+        return back()->with('success', 'Password berhasil diperbarui.');
     }
 }

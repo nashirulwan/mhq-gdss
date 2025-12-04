@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Peserta extends Model
 {
@@ -26,6 +27,11 @@ class Peserta extends Model
         'skor_borda' => 'integer',
         'peringkat' => 'integer'
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function penilaians(): HasMany
     {
