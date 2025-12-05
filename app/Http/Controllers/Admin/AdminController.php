@@ -101,7 +101,6 @@ class AdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
             'role' => 'required|in:admin,juri,peserta',
-            'is_active' => 'boolean',
             'password' => 'nullable|string|min:8|confirmed',
         ]);
 
@@ -109,7 +108,7 @@ class AdminController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
-            'is_active' => $request->boolean('is_active', $user->is_active),
+            'is_active' => $request->has('is_active'), // Fix: use has() instead of boolean()
         ];
 
         // Update password only if provided
@@ -117,10 +116,14 @@ class AdminController extends Controller
             $data['password'] = bcrypt($request->password);
         }
 
-        $user->update($data);
+        try {
+            $user->update($data);
 
-        return redirect()->route('admin.users')
-            ->with('success', "User {$user->name} berhasil diperbarui.");
+            return redirect()->route('admin.users')
+                ->with('success', "User {$user->name} berhasil diperbarui.");
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Gagal update user: ' . $e->getMessage());
+        }
     }
 
     /**

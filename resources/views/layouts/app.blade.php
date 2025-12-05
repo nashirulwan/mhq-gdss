@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Sistem Penilaian MHQ') - GDSS</title>
+    <title>@yield('title', 'Sistem Penilaian MHQ')</title>
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -63,57 +63,46 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('dashboard') }}">
-                <i class="bi bi-award-fill me-2"></i>Sistem Penilaian MHQ
-            </a>
+            <!-- Left side: Brand + Admin Info -->
+            <div class="d-flex align-items-center">
+                <a class="navbar-brand" href="{{ route('dashboard') }}">
+                    <i class="bi bi-award-fill me-2"></i>Sistem Penilaian MHQ
+                </a>
+
+                @auth
+                <span class="text-white ms-3 d-none d-md-inline-block">
+                    <i class="bi bi-person-circle me-1"></i>
+                    <small>{{ ucfirst(auth()->user()->role) }}</small>
+                </span>
+                @endauth
+            </div>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('dashboard') }}">
-                            <i class="bi bi-house-fill me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('peserta.index') }}">
-                            <i class="bi bi-people-fill me-1"></i> Peserta
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('penilaian.index') }}">
-                            <i class="bi bi-clipboard-check-fill me-1"></i> Penilaian
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ route('hasil.index') }}">
-                            <i class="bi bi-graph-up me-1"></i> Hasil
-                        </a>
-                    </li>
-                </ul>
 
-                <!-- User Info & Logout -->
-                <ul class="navbar-nav">
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- User Info & Logout - Right side -->
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-1"></i>
-                            {{ session('user.name') ?? 'User' }}
+                            {{ auth()->user()->name }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><h6 class="dropdown-header">
                                 <i class="bi bi-person me-1"></i>
-                                {{ session('user.name') ?? 'User' }}
+                                {{ auth()->user()->name }}
                             </h6></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><span class="dropdown-item-text">
                                 <small class="text-muted">
-                                    <i class="bi bi-envelope me-1"></i>{{ session('user.email') }}
+                                    <i class="bi bi-envelope me-1"></i>{{ auth()->user()->email }}
                                 </small>
                             </span></li>
                             <li><span class="dropdown-item-text">
                                 <small class="text-muted">
-                                    <i class="bi bi-shield-check me-1"></i>{{ ucfirst(session('user.role')) ?? 'User' }}
+                                    <i class="bi bi-shield-check me-1"></i>{{ ucfirst(auth()->user()->role) ?? 'User' }}
                                 </small>
                             </span></li>
                             <li><hr class="dropdown-divider"></li>
@@ -129,10 +118,7 @@
                     </li>
                 </ul>
 
-                <span class="navbar-text d-none d-md-inline-block">
-                    <small class="text-light">GDSS - SMART & Borda Method</small>
-                </span>
-            </div>
+              </div>
         </div>
     </nav>
 
@@ -142,45 +128,78 @@
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
                 <div class="position-sticky pt-3">
+                    @auth
                     <ul class="nav flex-column">
+                        <!-- Admin Menu -->
+                        @if(auth()->user()->isAdmin())
                         <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}" href="{{ route('admin.users') }}">
+                                <i class="bi bi-people-fill me-2"></i> Manage User
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('peserta.*') ? 'active' : '' }}" href="{{ route('peserta.index') }}">
-                                <i class="bi bi-person-lines-fill me-2"></i> Data Peserta
-                            </a>
-                        </li>
+                        @endif
+
+                        <!-- Input Penilaian Menu -->
+                        @if(auth()->user()->isAdmin())
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('penilaian.*') ? 'active' : '' }}" href="{{ route('penilaian.index') }}">
                                 <i class="bi bi-clipboard-data me-2"></i> Input Penilaian
                             </a>
                         </li>
+                        @endif
+
+                        <!-- Hasil Analisis Menu -->
+                        @if(auth()->user()->isAdmin() || auth()->user()->isJuri())
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('hasil.*') ? 'active' : '' }}" href="{{ route('hasil.index') }}">
-                                <i class="bi bi-bar-chart-fill me-2"></i> Hasil & Analisis
+                                <i class="bi bi-graph-up me-2"></i> Hasil & Analisis
                             </a>
                         </li>
+                        @endif
+
+                        <!-- Data Peserta Menu - hanya untuk admin -->
+                        @if(auth()->user()->isAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('peserta.index') ? 'active' : '' }}" href="{{ route('peserta.index') }}">
+                                <i class="bi bi-person-lines-fill me-2"></i> Data Peserta
+                            </a>
+                        </li>
+                        @endif
+
+                        <!-- Data Juri Menu - hanya untuk admin -->
+                        @if(auth()->user()->isAdmin())
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('juri.index') ? 'active' : '' }}" href="{{ route('juri.index') }}">
+                                <i class="bi bi-gavel me-2"></i> Data Juri
+                            </a>
+                        </li>
+                        @endif
                     </ul>
+                    @endauth
 
                     <hr>
 
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>Informasi</span>
+                        <span>Dashboard</span>
                     </h6>
                     <ul class="nav flex-column mb-2">
+                        <!-- Dashboard Juri -->
+                        @if(auth()->user()->isAdmin() || auth()->user()->isJuri())
                         <li class="nav-item">
-                            <span class="nav-link text-muted">
-                                <small>
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Metode: SMART + Borda<br>
-                                    Kriteria: {{ App\Models\Kriteria::where('is_active', true)->count() }}<br>
-                                    Juri Aktif: {{ App\Models\Juri::where('is_active', true)->count() }}
-                                </small>
-                            </span>
+                            <a class="nav-link {{ request()->routeIs('juri.dashboard') ? 'active' : '' }}" href="{{ route('juri.dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard Juri
+                            </a>
                         </li>
+                        @endif
+
+                        <!-- Dashboard Peserta -->
+                        @if(auth()->user()->isAdmin() || auth()->user()->isPeserta())
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('peserta.dashboard') ? 'active' : '' }}" href="{{ route('peserta.dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard Peserta
+                            </a>
+                        </li>
+                        @endif
                     </ul>
 
                     <hr>
@@ -193,8 +212,8 @@
                             <span class="nav-link text-primary">
                                 <small>
                                     <i class="bi bi-person-circle me-1"></i>
-                                    <strong>{{ session('user.name') ?? 'User' }}</strong><br>
-                                    <span class="text-muted">{{ ucfirst(session('user.role')) ?? 'User' }}</span>
+                                    <strong>{{ auth()->user()->name }}</strong><br>
+                                    <span class="text-muted">{{ ucfirst(auth()->user()->role) }}</span>
                                 </small>
                             </span>
                         </li>

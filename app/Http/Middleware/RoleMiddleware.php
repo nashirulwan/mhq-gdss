@@ -37,6 +37,11 @@ class RoleMiddleware
             return $next($request);
         }
 
+        // Admin can access all routes
+        if ($user->isAdmin()) {
+            return $next($request);
+        }
+
         if (!in_array($user->role, $roles)) {
             // Redirect to appropriate dashboard based on user role
             return redirect()->route($user->dashboard_route)

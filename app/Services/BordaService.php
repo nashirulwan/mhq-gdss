@@ -77,6 +77,12 @@ class BordaService
             ->orderBy('skor_borda', 'desc')
             ->get();
 
+        // Update peringkat di database
+        foreach ($pesertas as $index => $peserta) {
+            $peserta->peringkat_borda = $index + 1;
+            $peserta->save();
+        }
+
         return $pesertas;
     }
 
@@ -133,68 +139,72 @@ class BordaService
     }
 
     /**
-     * Get matriks Borda untuk visualisasi
+     * Get Borda matrix yang sudah diproses
      */
     public function getMatriksBorda()
     {
-        $pesertas = Peserta::all();
-        $juris = Juri::where('is_active', true)->get();
-        $kriterias = Kriteria::where('is_active', true)->get();
+        $pesertas = Peserta::whereNotNull('skor_borda')
+            ->orderBy('peringkat_borda')
+            ->get();
 
         $matriks = [];
 
         foreach ($pesertas as $peserta) {
-            $row = [
-                'peserta_id' => $peserta->id,
-                'nama_peserta' => $peserta->nama_lengkap,
-                'nomor_peserta' => $peserta->nomor_peserta,
-                'skor_borda_total' => $peserta->skor_borda
+            $matriks[] = [
+                'id' => $peserta->id,
+                'nama_lengkap' => $peserta->nama_lengkap,
+                'instansi' => $peserta->instansi,
+                'skor_borda' => $peserta->skor_borda,
+                'peringkat_borda' => $peserta->peringkat_borda,
+                'peringkat_smart' => $peserta->peringkat_smart,
+                'nilai_akhir_smart' => $peserta->nilai_akhir_smart
             ];
-
-            foreach ($kriterias as $kriteria) {
-                $poinKriteria = 0;
-                foreach ($juris as $juri) {
-                    $ranking = $this->rankingPesertaPerJuri($juri->id, $kriteria->id);
-                    $posisi = array_search($peserta->id, array_column($ranking, 'peserta_id'));
-
-                    if ($posisi !== false) {
-                        $jumlahPeserta = count($ranking);
-                        $poinBorda = $jumlahPeserta - 1 - $posisi;
-                        $poinKriteria += $poinBorda * $kriteria->bobot_borda;
-                    }
-                }
-
-                $row['kriteria_' . $kriteria->id] = [
-                    'nama_kriteria' => $kriteria->nama_kriteria,
-                    'poin_borda' => $poinKriteria
-                ];
-            }
-
-            $matriks[] = $row;
         }
 
-        return $matriks;
+        return collect($matriks);
     }
 
     /**
-     * Get detail voting per juri untuk transparansi
+     * Get detail voting per juri dan peserta untuk transparansi
      */
     public function getDetailVoting()
     {
         $juris = Juri::where('is_active', true)->get();
+        $pesertas = Peserta::whereNotNull('skor_borda')
+            ->orderBy('peringkat_borda')
+            ->get();
         $kriterias = Kriteria::where('is_active', true)->get();
 
         $detailVoting = [];
 
-        foreach ($juris as $juri) {
-            foreach ($kriterias as $kriteria) {
-                $ranking = $this->rankingPesertaPerJuri($juri->id, $kriteria->id);
+        foreach ($pesertas as $peserta) {
+            $detailVoting[$peserta->id] = [
+                'nama_peserta' => $peserta->nama_lengkap,
+                'skor_borda' => $peserta->skor_borda,
+                'peringkat_borda' => $peserta->peringkat_borda,
+            ];
 
-                $detailVoting[] = [
-                    'juri' => $juri->nama_lengkap,
-                    'kriteria' => $kriteria->nama_kriteria,
-                    'ranking' => $ranking
-                ];
+            foreach ($juris as $juri) {
+                $detailVoting[$peserta->id]['nama_juri'] = $juri->nama_lengkap;
+
+                foreach ($kriterias as $kriteria) {
+                    $ranking = $this->rankingPesertaPerJuri($juri->id, $kriteria->id);
+                    $rank = 0;
+                    $poinBorda = 0;
+
+                    foreach ($ranking as $rankedPeserta) {
+                        $rank++;
+                        if ($rankedPeserta['peserta_id'] == $peserta->id) {
+                            $jumlahPeserta = count($ranking);
+                            $poinBorda = ($jumlahPeserta - 1) - $rank + 1;
+                            break;
+                        }
+                    }
+
+                    $detailVoting[$peserta->id]["rank_{$kriteria->id}"] = $rank;
+                    $detailVoting[$peserta->id]["poin_borda_{$kriteria->id}"] = $poinBorda;
+                    $detailVoting[$peserta->id]['juri_id'] = $juri->id;
+                }
             }
         }
 

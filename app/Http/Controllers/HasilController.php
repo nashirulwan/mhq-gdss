@@ -39,7 +39,13 @@ class HasilController extends Controller
             $combinedResults = $this->bordaService->rankingGabungan();
         }
 
-        return view('hasil.index_basic');
+        return view('hasil.index_basic', compact(
+            'smartStatus',
+            'bordaStatus',
+            'smartResults',
+            'bordaResults',
+            'combinedResults'
+        ));
     }
 
     public function hitungSMART(Request $request)

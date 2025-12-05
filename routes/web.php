@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Juri\JuriController as RoleJuriController;
 use App\Http\Controllers\Peserta\PesertaController as RolePesertaController;
+use App\Http\Controllers\ExportController;
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -43,11 +44,20 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:juri')->prefix('juri')->name('juri.')->group(function () {
         Route::get('dashboard', [RoleJuriController::class, 'dashboard'])->name('dashboard');
         Route::get('pesertas', [RoleJuriController::class, 'pesertas'])->name('pesertas');
+        Route::get('pesertas/{pesertaId}/detail', [RoleJuriController::class, 'pesertaDetail'])->name('peserta.detail');
         Route::get('pesertas/{peserta}/evaluate', [RoleJuriController::class, 'evaluate'])->name('evaluate');
         Route::post('pesertas/{peserta}/evaluate', [RoleJuriController::class, 'saveEvaluation'])->name('save_evaluation');
         Route::get('history', [RoleJuriController::class, 'history'])->name('history');
         Route::get('statistics', [RoleJuriController::class, 'statistics'])->name('statistics');
         Route::get('profile', [RoleJuriController::class, 'profile'])->name('profile');
+
+        // Export routes for juri
+        Route::get('export/statistics-csv', [ExportController::class, 'exportJuriStatisticsToCSV'])->name('export.statistics_csv');
+
+        // Read-only access to hasil for juri
+        Route::get('hasil', [HasilController::class, 'index'])->name('hasil.index');
+        Route::get('hasil/matriks-smart', [HasilController::class, 'matriksSMART'])->name('hasil.matriks_smart');
+        Route::get('hasil/matriks-borda', [HasilController::class, 'matriksBorda'])->name('hasil.matriks_borda');
     });
 
     // Peserta Routes
@@ -82,6 +92,15 @@ Route::middleware('auth')->group(function () {
         Route::post('hasil/hitung-gabungan', [HasilController::class, 'hitungGabungan'])->name('hasil.hitung_gabungan');
         Route::get('hasil/matriks-smart', [HasilController::class, 'matriksSMART'])->name('hasil.matriks_smart');
         Route::get('hasil/matriks-borda', [HasilController::class, 'matriksBorda'])->name('hasil.matriks_borda');
+
+        // Routes untuk Export
+        Route::get('export/smart-csv', [ExportController::class, 'exportSMARTToCSV'])->name('export.smart_csv');
+        Route::get('export/borda-csv', [ExportController::class, 'exportBordaToCSV'])->name('export.borda_csv');
+        Route::get('export/combined-csv', [ExportController::class, 'exportCombinedToCSV'])->name('export.combined_csv');
+        Route::get('export/matrix-smart-csv', [ExportController::class, 'exportMatrixSMARTToCSV'])->name('export.matrix_smart_csv');
+        Route::get('export/voting-borda-csv', [ExportController::class, 'exportVotingBordaToCSV'])->name('export.voting_borda_csv');
+        Route::get('export/pdf/{type}', [ExportController::class, 'exportPDF'])->name('export.pdf');
+        Route::get('export/excel/{type}', [ExportController::class, 'exportExcel'])->name('export.excel');
     });
 
     // Redirect based on role for root path

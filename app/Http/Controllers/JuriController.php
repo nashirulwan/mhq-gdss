@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Juri;
+use App\Models\Penilaian;
 
 class JuriController extends Controller
 {
@@ -11,7 +13,11 @@ class JuriController extends Controller
      */
     public function index()
     {
-        //
+        $juris = Juri::withCount('penilaians')
+            ->orderBy('nama_lengkap')
+            ->paginate(10);
+
+        return view('juri.index', compact('juris'));
     }
 
     /**
@@ -19,7 +25,15 @@ class JuriController extends Controller
      */
     public function create()
     {
-        //
+        $keahlianOptions = [
+            'Tajwid',
+            'Qiraat',
+            'Fasohah',
+            'Makharijul Huruf',
+            'Tarannum'
+        ];
+
+        return view('juri.create', compact('keahlianOptions'));
     }
 
     /**
@@ -27,7 +41,19 @@ class JuriController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'nama_lengkap' => 'required|string|max:255',
+            'instansi' => 'required|string|max:255',
+            'kontak' => 'required|string|max:255',
+            'keahlian' => 'required|string|in:Tajwid,Qiraat,Fasohah,Makharijul Huruf,Tarannum',
+            'is_active' => 'boolean',
+        ]);
+
+        $juri = Juri::create($request->all());
+
+        return redirect()
+            ->route('juri.index')
+            ->with('success', 'Juri ' . $juri->nama_lengkap . ' berhasil ditambahkan!');
     }
 
     /**
@@ -35,7 +61,10 @@ class JuriController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $juri = Juri::with(['penilaians.peserta', 'penilaians.kriteria'])
+            ->findOrFail($id);
+
+        return view('juri.show', compact('juri'));
     }
 
     /**
@@ -43,7 +72,16 @@ class JuriController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        $juri = Juri::findOrFail($id);
+        $keahlianOptions = [
+            'Tajwid',
+            'Qiraat',
+            'Fasohah',
+            'Makharijul Huruf',
+            'Tarannum'
+        ];
+
+        return view('juri.edit', compact('juri', 'keahlianOptions'));
     }
 
     /**
@@ -51,7 +89,21 @@ class JuriController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $juri = Juri::findOrFail($id);
+
+        $request->validate([
+            'nama_lengkap' => 'required|string|max:255',
+            'instansi' => 'required|string|max:255',
+            'kontak' => 'required|string|max:255',
+            'keahlian' => 'required|string|in:Tajwid,Qiraat,Fasohah,Makharijul Huruf,Tarannum',
+            'is_active' => 'boolean',
+        ]);
+
+        $juri->update($request->all());
+
+        return redirect()
+            ->route('juri.index')
+            ->with('success', 'Data juri berhasil diperbarui!');
     }
 
     /**
@@ -59,6 +111,15 @@ class JuriController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $juri = Juri::findOrFail($id);
+
+        // Hapus semua penilaian terkait
+        Penilaian::where('juri_id', $juri->id)->delete();
+
+        $juri->delete();
+
+        return redirect()
+            ->route('juri.index')
+            ->with('success', 'Juri ' . $juri->nama_lengkap . ' berhasil dihapus!');
     }
 }

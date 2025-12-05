@@ -145,40 +145,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Quick Actions -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ route('admin.users') }}" class="btn btn-primary btn-block">
-                                <i class="fas fa-users me-2"></i>Manage Users
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ route('peserta.index') }}" class="btn btn-success btn-block">
-                                <i class="fas fa-user-graduate me-2"></i>Manage Peserta
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ route('juri.index') }}" class="btn btn-info btn-block">
-                                <i class="fas fa-gavel me-2"></i>Manage Juri
-                            </a>
-                        </div>
-                        <div class="col-md-3 mb-2">
-                            <a href="{{ route('hasil.index') }}" class="btn btn-warning btn-block">
-                                <i class="fas fa-chart-bar me-2"></i>View Results
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 @endsection

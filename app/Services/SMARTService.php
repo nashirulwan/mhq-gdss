@@ -101,7 +101,8 @@ class SMARTService
 
         $peringkat = 1;
         foreach ($pesertas as $peserta) {
-            $peserta->update(['peringkat' => $peringkat]);
+            $peserta->peringkat_smart = $peringkat;
+            $peserta->save();
             $peringkat++;
         }
 
@@ -116,32 +117,56 @@ class SMARTService
         $pesertas = Peserta::with(['penilaians.kriteria'])->get();
         $kriterias = Kriteria::where('is_active', true)->get();
 
-        $matriks = [];
+        $matriks = collect();
+
         foreach ($pesertas as $peserta) {
             $row = [
-                'peserta_id' => $peserta->id,
-                'nama_peserta' => $peserta->nama_lengkap,
+                'id' => $peserta->id,
+                'nama_lengkap' => $peserta->nama_lengkap,
                 'nomor_peserta' => $peserta->nomor_peserta,
-                'nilai_akhir_smart' => $peserta->nilai_akhir_smart,
-                'peringkat' => $peserta->peringkat
+                'instansi' => $peserta->instansi,
+                'nilai_akhir_smart' => $peserta->nilai_akhir_smart ?? 0,
+                'peringkat_smart' => $peserta->peringkat ?? 0,
             ];
 
+            // Get min/max values for each criteria across all participants
             foreach ($kriterias as $kriteria) {
                 $penilaian = $peserta->penilaians()
                     ->where('kriteria_id', $kriteria->id)
                     ->first();
 
-                $row['kriteria_' . $kriteria->id] = [
-                    'nama_kriteria' => $kriteria->nama_kriteria,
-                    'nilai_asli' => $penilaian ? $penilaian->nilai : 0,
-                    'nilai_normalisasi' => $penilaian ? $penilaian->nilai_normalisasi : 0,
-                    'nilai_terbobot' => $penilaian ? $penilaian->nilai_terbobot : 0,
-                    'bobot' => $kriteria->bobot,
-                    'bobot_normalisasi' => $kriteria->getBobotNormalisasi()
-                ];
+                // Get the average value from all jurors for this participant and criteria
+                $avgNilai = Penilaian::where('peserta_id', $peserta->id)
+                    ->where('kriteria_id', $kriteria->id)
+                    ->whereNotNull('nilai')
+                    ->avg('nilai') ?? 0;
+
+                // Get min/max for normalization calculation
+                $minNilai = Penilaian::where('kriteria_id', $kriteria->id)
+                    ->whereNotNull('nilai')
+                    ->min('nilai') ?? 0;
+
+                $maxNilai = Penilaian::where('kriteria_id', $kriteria->id)
+                    ->whereNotNull('nilai')
+                    ->max('nilai') ?? 0;
+
+                // Calculate normalized value
+                $normalisasi = 0;
+                if ($maxNilai - $minNilai != 0) {
+                    if ($kriteria->atribut === 'benefit') {
+                        $normalisasi = ($avgNilai - $minNilai) / ($maxNilai - $minNilai);
+                    } else {
+                        $normalisasi = ($maxNilai - $avgNilai) / ($maxNilai - $minNilai);
+                    }
+                }
+
+                $row["penilaian_{$kriteria->id}"] = $avgNilai;
+                $row["normalisasi_{$kriteria->id}"] = $normalisasi;
+                $row["min_{$kriteria->id}"] = $minNilai;
+                $row["max_{$kriteria->id}"] = $maxNilai;
             }
 
-            $matriks[] = $row;
+            $matriks->push($row);
         }
 
         return $matriks;
